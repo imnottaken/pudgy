@@ -121,7 +121,9 @@ export function formatReport(report: Report, options: FormatOptions): string {
     out.push("");
     out.push(c.bold("DUPLICATES") + c.dim("  same package, several copies"));
     for (const dup of report.duplicates.slice(0, top)) {
-      const versions = dup.versions.map((v) => v.version).join(", ");
+      const counts = new Map<string, number>();
+      for (const v of dup.versions) counts.set(v.version, (counts.get(v.version) ?? 0) + 1);
+      const versions = [...counts].map(([v, n]) => (n > 1 ? `${v} ×${n}` : v)).join(", ");
       out.push(
         `  ${c.yellow(dup.name)} ${c.dim(`×${dup.versions.length}`)}  ${versions}` +
           c.dim(`  (${formatBytes(dup.wasted)} wasted)`),

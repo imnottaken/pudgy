@@ -165,3 +165,31 @@ test("projects with no swaps omit the section", async () => {
     cleanup(dir);
   }
 });
+
+test("duplicates collapse repeated versions instead of listing them twice", async () => {
+  const dir = project(
+    { a: "1", b: "1", c: "1" },
+    {
+      a: { deps: { shared: "1" }, bytes: 10 },
+      b: { deps: { shared: "1" }, bytes: 10 },
+      c: { deps: { shared: "1" }, bytes: 10 },
+    },
+  );
+  try {
+    for (const owner of ["a", "b"]) {
+      const d = path.join(dir, "node_modules", owner, "node_modules", "shared");
+      mkdirSync(d, { recursive: true });
+      writeFileSync(path.join(d, "package.json"), JSON.stringify({ name: "shared", version: "2.0.0" }));
+      writeFileSync(path.join(d, "blob.bin"), Buffer.alloc(KB));
+    }
+    const d = path.join(dir, "node_modules", "shared");
+    mkdirSync(d, { recursive: true });
+    writeFileSync(path.join(d, "package.json"), JSON.stringify({ name: "shared", version: "3.0.0" }));
+    writeFileSync(path.join(d, "blob.bin"), Buffer.alloc(KB));
+    const text = formatReport(await run(dir), { top: 10, color: false });
+    assert.match(text, /shared ×3\s+2\.0\.0 ×2, 3\.0\.0/);
+    assert.ok(!text.includes("2.0.0, 2.0.0"));
+  } finally {
+    cleanup(dir);
+  }
+});
