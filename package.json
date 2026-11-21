@@ -1,0 +1,54 @@
+{
+  "name": "pudgy",
+  "version": "0.1.0",
+  "description": "See why your node_modules is so heavy, and exactly which dependency to blame.",
+  "type": "module",
+  "bin": {
+    "pudgy": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "node_modules",
+    "dependencies",
+    "bundle-size",
+    "disk-usage",
+    "dependency-graph",
+    "bloat",
+    "cli"
+  ],
+  "author": "Koustav Dey",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imnottaken/pudgy.git"
+  },
+  "homepage": "https://github.com/imnottaken/pudgy#readme",
+  "bugs": {
+    "url": "https://github.com/imnottaken/pudgy/issues"
+  },
+  "engines": {
+    "node": ">=18.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
