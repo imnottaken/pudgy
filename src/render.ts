@@ -119,6 +119,9 @@ export function renderCardSvg(report: Report, options: CardOptions = {}): string
     `<text x="124" y="68" font-size="18" fill="${MUTED}">what is your node_modules made of?</text>`,
     `<text x="48" y="136" font-size="56" font-weight="800" fill="${INK}">${headline}</text>`,
     `<text x="48" y="182" font-size="28" fill="${top && top.size / (total || 1) >= 0.15 ? heat(top.size / total) : MUTED}">${esc(sub)}</text>`,
+    report.swapTotal >= 1024 * 1024
+      ? `<text x="${W - 48}" y="182" font-size="24" font-weight="600" fill="#22c55e" text-anchor="end">swap ideas could save ~${formatBytes(report.swapTotal)}</text>`
+      : "",
     treemapBody(placed),
     `<text x="48" y="608" font-size="18" fill="${MUTED}" font-family="${MONO}">npx pudgy</text>`,
     `<text x="${W - 48}" y="608" font-size="16" fill="${MUTED}" text-anchor="end">${report.packageCount} packages</text>`,
@@ -139,6 +142,34 @@ export function renderHtml(report: Report): string {
     )
     .join("\n");
 
+  const swapRows = report.swaps
+    .slice(0, 15)
+    .map(
+      (s) =>
+        `<tr><td>${esc(s.name)}</td><td>${esc(s.alt)}${s.kind === "built-in" ? ' <span class="dev">built in</span>' : ""}</td>` +
+        `<td class="n">~${formatBytes(s.saves)}</td>` +
+        `<td>${s.direct ? "you installed this" : `via ${esc(s.via ?? "another package")}`}</td>` +
+        `<td class="muted">${esc(s.note)}</td></tr>`,
+    )
+    .join("\n");
+  const swapSection =
+    report.swaps.length > 0
+      ? `
+  <h2>Swap ideas</h2>
+  <p class="muted">${
+        report.swapTotal > 0
+          ? `Swapping the packages you installed yourself could save up to ~${formatBytes(report.swapTotal)}.`
+          : "These are all pulled in by other packages, so they are not yours to swap directly."
+      } Rows marked "via" are installed by another dependency, so the fix is upgrading or replacing that one. Check the notes before switching, since APIs are not always identical.</p>
+  <table class="wide">
+    <thead><tr><th>Package</th><th>Consider</th><th class="n">Saves</th><th>Where</th><th>Note</th></tr></thead>
+    <tbody>
+${swapRows}
+    </tbody>
+  </table>
+`
+      : "";
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -156,6 +187,8 @@ export function renderHtml(report: Report): string {
   .stats { margin: 4px 0 24px; }
   table { border-collapse: collapse; width: 100%; max-width: 640px; font-size: 14px; }
   th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid #1f2940; }
+  table.wide { max-width: 1100px; }
+  td { vertical-align: top; }
   th { color: ${MUTED}; font-weight: 500; }
   td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
   .dev { color: ${MUTED}; font-size: 12px; }
@@ -178,7 +211,7 @@ export function renderHtml(report: Report): string {
 ${rows}
     </tbody>
   </table>
-
+${swapSection}
   <h2>Share it</h2>
   <button id="dl" type="button">Download PNG</button>
   <div class="card">${card}</div>

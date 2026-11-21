@@ -137,7 +137,7 @@ export function layoutGroups(groups: Group[], rect: Rect, options: LayoutOptions
     const tail = groups.slice(options.maxGroups - 1);
     const items = tail.flatMap((g) => g.items).sort((a, b) => b.size - a.size);
     head.push({
-      name: `${tail.length} other dependencies`,
+      name: `${tail.length} others`,
       size: tail.reduce((a, g) => a + g.size, 0),
       items,
     });

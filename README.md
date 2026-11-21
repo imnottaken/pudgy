@@ -30,6 +30,13 @@ DUPLICATES  same package, several copies
 - **What you'd save.** For each dependency you installed, the space you'd actually free by removing it. Packages shared with another dependency don't count, since they'd stay.
 - **Who to blame.** For every heavy package, the chain that pulled it in (`via react-datepicker → moment`).
 - **Duplicates.** The same package installed as several copies, and the space they waste.
+- **Swap ideas.** Heavy packages that have a lighter or built-in replacement, such as `moment` → `dayjs` or `rimraf` → `fs.rm`, with an estimate of the space saved.
+
+### About swap ideas
+
+The suggestions come from a small hand-picked list in [`src/alternatives.ts`](src/alternatives.ts), not a guess. Each entry has to be smaller *after* counting the replacement's own install size, which is why popular swaps that actually install larger, like `lodash` → `es-toolkit`, are not in it. Savings are estimates. Each entry has a note about what you would lose by switching, shown in the HTML report and in `--json`. Suggestions for packages you did not install yourself show which dependency pulls them in, so you know where to look.
+
+To propose an addition, open a pull request that adds an entry with the replacement's real unpacked size from the npm registry.
 
 ## Usage
 

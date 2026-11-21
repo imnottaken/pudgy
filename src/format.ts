@@ -97,6 +97,26 @@ export function formatReport(report: Report, options: FormatOptions): string {
     out.push(`  ${pad(label, heavyWidth)}  ${lpad(formatBytes(row.size), 8)}  ${blame}`);
   }
 
+  if (report.swaps.length > 0) {
+    out.push("");
+    out.push(
+      c.bold("SWAP IDEAS") +
+        c.dim(
+          report.swapTotal > 0
+            ? `  lighter or built-in alternatives, up to ${formatBytes(report.swapTotal)} saved from what you installed`
+            : "  pulled in by other packages, so not yours to swap directly",
+        ),
+    );
+    const rows = report.swaps.slice(0, top);
+    const label = (s: (typeof rows)[number]) =>
+      `${s.name} → ${s.short}${s.kind === "built-in" ? " (built in)" : ""}`;
+    const width = Math.max(...rows.map((s) => label(s).length));
+    for (const s of rows) {
+      const blame = s.direct ? c.dim("you installed this directly") : c.dim(`via ${s.via ?? "another package"}`);
+      out.push(`  ${c.cyan(pad(label(s), width))}  ${lpad(`~${formatBytes(s.saves)}`, 9)}  ${blame}`);
+    }
+  }
+
   if (report.duplicates.length > 0) {
     out.push("");
     out.push(c.bold("DUPLICATES") + c.dim("  same package, several copies"));
