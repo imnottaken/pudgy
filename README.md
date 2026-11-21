@@ -46,12 +46,51 @@ pudgy [dir] [options]
   --top <n>    rows per section (default 10)
   --prod       ignore devDependencies
   --json       print the full report as JSON
+  --markdown   print a pull request comment
+  --base <file>  a --json report to compare against (with --markdown)
   --html       write pudgy.html: interactive treemap + shareable card
   --card       write pudgy-card.svg (1200x630 share image)
   --out <dir>  where --html and --card write (default: current directory)
   --open       open the HTML report when done (implies --html)
   --no-color   disable colors
 ```
+
+## GitHub Action
+
+Comment on every pull request with how much it changes the weight of `node_modules`: the total, the dependencies it added or removed, and swap ideas. The comment is updated in place on every push, and also written to the job summary.
+
+```yaml
+name: pudgy
+on: pull_request
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  weight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts
+      - uses: imnottaken/pudgy@main
+```
+
+Install your dependencies before the action. To compare with the base branch it checks that commit out separately and installs it the same way (npm, pnpm or yarn, picked from your lockfile). If that install fails, you still get the report, just without the comparison.
+
+| Input | Default | |
+| --- | --- | --- |
+| `working-directory` | `.` | Folder with the `package.json`, for monorepos |
+| `production-only` | `false` | Ignore `devDependencies` |
+| `install-command` | detected | Command used to install the base branch |
+| `comment` | `true` | Set `false` to only write the job summary |
+
+Pull requests from forks get a read-only token, so there the report only appears in the job summary.
 
 ## Treemap and share card
 

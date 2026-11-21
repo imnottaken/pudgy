@@ -2,8 +2,9 @@
 import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { analyze } from "./analyze.js";
+import { analyze, type Report } from "./analyze.js";
 import { formatReport } from "./format.js";
+import { isReport, renderComment } from "./markdown.js";
 import { renderCardSvg, renderHtml } from "./render.js";
 import { scanProject } from "./scan.js";
 
@@ -16,6 +17,8 @@ Options
   --top <n>    rows per section (default 10)
   --prod       ignore devDependencies
   --json       print the full report as JSON
+  --markdown   print a pull request comment (used by the GitHub Action)
+  --base <file>  a --json report to compare against (with --markdown)
   --html       write pudgy.html: interactive treemap + shareable card
   --card       write pudgy-card.svg (1200x630 share image)
   --out <dir>  where --html and --card write (default: current directory)
@@ -47,6 +50,8 @@ async function main(argv: string[]): Promise<number> {
   let top = 10;
   let prod = false;
   let json = false;
+  let markdown = false;
+  let basePath: string | undefined;
   let html = false;
   let card = false;
   let open = false;
@@ -65,6 +70,15 @@ async function main(argv: string[]): Promise<number> {
       prod = true;
     } else if (arg === "--json") {
       json = true;
+    } else if (arg === "--markdown") {
+      markdown = true;
+    } else if (arg === "--base") {
+      const value = argv[++i];
+      if (!value || value.startsWith("-")) {
+        process.stderr.write("--base needs a JSON report file\n");
+        return 2;
+      }
+      basePath = value;
     } else if (arg === "--html") {
       html = true;
     } else if (arg === "--card") {
@@ -96,9 +110,26 @@ async function main(argv: string[]): Promise<number> {
     }
   }
 
+  if (basePath && !markdown) {
+    process.stderr.write("--base only works together with --markdown\n");
+    return 2;
+  }
+
   try {
+    let base: Report | undefined;
+    if (basePath) {
+      const parsed: unknown = JSON.parse(readFileSync(basePath, "utf8"));
+      if (!isReport(parsed)) throw new Error(`${basePath} is not a pudgy --json report`);
+      base = parsed;
+    }
     const report = analyze(await scanProject(dir, { prod }));
-    process.stdout.write(json ? `${JSON.stringify(report, null, 2)}\n` : formatReport(report, { top, color }));
+    process.stdout.write(
+      markdown
+        ? renderComment(report, base)
+        : json
+          ? `${JSON.stringify(report, null, 2)}\n`
+          : formatReport(report, { top, color }),
+    );
 
     if (html || card) mkdirSync(outDir, { recursive: true });
     let htmlPath: string | undefined;

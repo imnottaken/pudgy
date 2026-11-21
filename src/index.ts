@@ -8,3 +8,4 @@ export { formatReport, formatBytes } from "./format.js";
 export { squarify, buildGroups, layoutGroups } from "./treemap.js";
 export type { Rect, Group, PlacedGroup } from "./treemap.js";
 export { renderHtml, renderCardSvg, renderTreemapSvg } from "./render.js";
+export { renderComment, COMMENT_MARKER, isReport } from "./markdown.js";

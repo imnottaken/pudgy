@@ -1,0 +1,45 @@
+name: pudgy
+description: Comment on pull requests with how much they change the weight of node_modules, and who to blame.
+author: Koustav Dey
+branding:
+  icon: package
+  color: orange
+
+inputs:
+  working-directory:
+    description: Folder with the package.json to scan, relative to the repository root.
+    default: "."
+  production-only:
+    description: Ignore devDependencies.
+    default: "false"
+  install-command:
+    description: Command that installs dependencies on the base branch. Detected from your lockfile when empty.
+    default: ""
+  comment:
+    description: Post the report as a pull request comment. It always goes to the job summary.
+    default: "true"
+  github-token:
+    description: Token used to post the comment.
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Build pudgy
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm ci --ignore-scripts --no-audit --no-fund && npm run build
+
+    - name: Report dependency weight
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/action/run.sh"
+      env:
+        PUDGY_ACTION_DIR: ${{ github.action_path }}
+        PUDGY_WORKDIR: ${{ inputs.working-directory }}
+        PUDGY_PROD: ${{ inputs.production-only }}
+        PUDGY_INSTALL: ${{ inputs.install-command }}
+        PUDGY_COMMENT: ${{ inputs.comment }}
+        PUDGY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        PUDGY_PR_NUMBER: ${{ github.event.pull_request.number }}
+        PUDGY_REPO: ${{ github.repository }}
+        GH_TOKEN: ${{ inputs.github-token }}
